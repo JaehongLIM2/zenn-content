@@ -3,7 +3,7 @@ title: "Vercel・Railway・AWSの違いからWebアプリのデプロイ先を�
 emoji: "🚀"
 type: "tech"
 topics: ["aws", "vercel", "railway", "deploy"]
-published: false
+published: true
 ---
 
 Webアプリケーションのデプロイ先を調べると、Vercel、Railway、AWSといったサービスが候補に挙がります。
@@ -14,19 +14,19 @@ Webアプリケーションのデプロイ先を調べると、Vercel、Railway�
 
 Webサイトを公開するには、ソースコードをサーバーへ置くだけでなく、次のような要素が必要です。
 
-- アプリケーションのBuild
+- アプリケーションのビルド
 - サーバー、または静的ファイルの保存先
-- DomainとDNS
+- ドメインとDNS
 - HTTPS証明書
 - CDN
 - CI/CD
-- LogとMonitoring
+- ログとモニタリング
 
 Reactの静的サイトをAWSで構成する場合、たとえば次のような流れになります。
 
 ```text
 GitHub
-  ↓ Build
+  ↓ ビルド
 S3
   ↓
 CloudFront
@@ -40,99 +40,99 @@ Route 53 + HTTPS
 
 ## Vercel：フロントエンドを素早く公開する
 
-Vercelでは、Git Repositoryを連携すると、Pushを契機にBuildとDeployが実行されます。
+Vercelでは、Gitリポジトリを連携すると、プッシュを契機にビルドとデプロイが実行されます。
 
 ```text
 GitHub
   ↓ git push
 Vercel
-  ├─ Build
-  ├─ Deploy
+  ├─ ビルド
+  ├─ デプロイ
   ├─ HTTPS
   ├─ CDN
-  └─ Preview URL
+  └─ プレビューURL
 ```
 
-Reactの静的サイトだけでなく、Next.jsアプリケーションやFunctionsもデプロイできます。Pull RequestごとにPreview環境を確認できるため、画面変更のレビューにも向いています。
+Reactの静的サイトだけでなく、Next.jsアプリケーションやVercel Functionsもデプロイできます。Pull Requestごとにプレビュー環境を確認できるため、画面変更のレビューにも向いています。
 
 候補になりやすいのは次のようなケースです。
 
-- PortfolioやTechnical Blog
+- ポートフォリオや技術ブログ
 - React、Next.jsを使ったWebアプリ
 - 早い段階で確認したいMVP
 - フロントエンドが中心のサービス
 - 短時間で完了するサーバー処理
 
-一方、長時間動くJob、特殊なNetwork、OSレベルの制御が必要なバックエンドでは、別の実行基盤を検討した方が自然です。
+一方、長時間動くジョブ、特殊なネットワーク、OSレベルの制御が必要なバックエンドでは、別の実行基盤を検討した方が自然です。
 
 ### Hobby Planを利用するときの注意
 
 2026年8月時点の公式ドキュメントでは、Hobby Planは個人・非商用のプロジェクト向けです。業務や商用サービスで利用する場合は、最新の利用条件とPro Planを確認する必要があります。
 
-無料枠の有無だけでなく、Functionの実行時間や転送量など、アプリケーションに関係する制限もデプロイ前に確認します。
+無料枠の有無だけでなく、Vercel Functionsの実行時間や転送量など、アプリケーションに関係する制限もデプロイ前に確認します。
 
 ## Railway：バックエンドとデータベースを簡単に配置する
 
 Railwayは、Spring BootやNode.jsなどのバックエンドとPostgreSQLを、比較的少ない設定でデプロイできるプラットフォームです。
 
 ```text
-Frontend  → Vercel
-Backend   → Railway / Spring Boot
-Database  → Railway / PostgreSQL
+フロントエンド → Vercel
+バックエンド   → Railway / Spring Boot
+データベース   → Railway / PostgreSQL
 ```
 
-Spring Bootは、GitHub Repository、Railway CLI、Dockerfileなどからデプロイできます。EC2へSSH接続してJavaやプロセス管理ツールを設定する作業を減らせるため、まずAPIを外部から確認したいときに便利です。
+Spring Bootは、GitHubリポジトリ、Railway CLI、Dockerfileなどからデプロイできます。EC2へSSH接続してJavaやプロセス管理ツールを設定する作業を減らせるため、まずAPIを外部から確認したいときに便利です。
 
 次のようなケースで検討できます。
 
-- 独立したBackend APIが必要
+- 独立したバックエンドAPIが必要
 - Spring Bootを短時間で公開したい
-- ApplicationとDatabaseを同じProject内で接続したい
-- Infrastructureの構築より機能検証を優先したい
+- アプリケーションとデータベースを同じプロジェクト内で接続したい
+- インフラの構築より機能検証を優先したい
 
-ただし、実行方法や料金はRailwayの仕様に依存します。NetworkやSecurityを細かく設計する必要がある場合は、要件を満たせるか先に確認します。
+ただし、実行方法や料金はRailwayの仕様に依存します。ネットワークやセキュリティを細かく設計する必要がある場合は、要件を満たせるか先に確認します。
 
 ## AWS：必要なインフラを組み合わせる
 
-AWSは、VercelやRailwayと同じ範囲だけを扱うサービスではありません。Compute、Storage、Database、Network、Securityなどを組み合わせるCloud Platformです。
+AWSは、VercelやRailwayと同じ範囲だけを扱うサービスではありません。コンピュート、ストレージ、データベース、ネットワーク、セキュリティなどを組み合わせるクラウドプラットフォームです。
 
 ReactとSpring Bootを使う場合、次のような構成が考えられます。
 
 ```text
 ユーザー
   ├─ React → S3 + CloudFront
-  └─ API   → Load Balancer → ECS / Spring Container
+  └─ API   → Load Balancer → ECS / Springコンテナ
                                   ↓
                                RDS PostgreSQL
 ```
 
-学習用であれば、最初はEC2上でDocker Containerを1つ動かす構成も選べます。要件の増加に合わせてLoad BalancerやECSへ移行する方法もあります。
+学習用であれば、最初はEC2上でDockerコンテナを1つ動かす構成も選べます。要件の増加に合わせてロードバランサーやECSへ移行する方法もあります。
 
 AWSが候補になりやすいのは次のような場合です。
 
-- NetworkやSecurityを細かく制御したい
-- 複数のBackendや非同期Jobを運用する
-- Container、Load Balancer、Auto Scalingが必要
+- ネットワークやセキュリティを細かく制御したい
+- 複数のバックエンドや非同期ジョブを運用する
+- コンテナ、ロードバランサー、Auto Scalingが必要
 - 組織の権限管理や監査要件がある
-- Cloud Infrastructure自体を学習したい
+- クラウドインフラ自体を学習したい
 
-自由度が高い分、Cost、Security、Monitoring、障害対応まで、設計する範囲も広くなります。
+自由度が高い分、コスト、セキュリティ、モニタリング、障害対応まで、設計する範囲も広くなります。
 
 ## 3つの選択肢を比較する
 
 | 観点 | Vercel | Railway | AWS |
 |---|---|---|---|
-| 主な強み | Frontend・Next.js | Backend・DBの簡単なDeploy | 幅広いInfrastructure |
+| 主な強み | フロントエンド・Next.js | バックエンド・DBの簡単なデプロイ | 幅広いインフラ |
 | 導入の難易度 | 低い | 低い〜中程度 | 中程度〜高い |
-| Server制御 | 限定的 | 限定的 | 広い |
+| サーバー制御 | 限定的 | 限定的 | 広い |
 | 運用負担 | 少ない | 少ない〜中程度 | 構成による |
-| 向いている例 | Portfolio、MVP | API、小規模Service | 複雑なService、企業System |
+| 向いている例 | ポートフォリオ、MVP | API、小規模サービス | 複雑なサービス、企業システム |
 
 同じプロジェクトで複数のサービスを組み合わせることもできます。
 
 ## 構成例
 
-### 静的なPortfolio
+### 静的なポートフォリオ
 
 ```text
 React + Vercel
@@ -150,7 +150,7 @@ PostgreSQL  → Railway
 
 バックエンドは自分で実装しつつ、サーバー構築の負担を抑える構成です。
 
-### Infrastructureまで扱うチーム開発
+### インフラまで扱うチーム開発
 
 ```text
 React       → S3 / CloudFront
@@ -158,7 +158,7 @@ Spring Boot → Docker / ECS
 PostgreSQL  → RDS
 ```
 
-Container、Network、CI/CD、Monitoringまで学習対象にできます。
+コンテナ、ネットワーク、CI/CD、モニタリングまで学習対象にできます。
 
 ## まとめ
 
@@ -166,10 +166,10 @@ Container、Network、CI/CD、Monitoringまで学習対象にできます。
 
 デプロイ先を決めるときは、次の順で確認します。
 
-1. 静的なFrontendか、常時動くBackendか
-2. Databaseや長時間Jobが必要か
-3. NetworkとServerをどこまで制御したいか
-4. 想定Trafficと障害対応の水準
+1. 静的なフロントエンドか、常時動くバックエンドか
+2. データベースや長時間ジョブが必要か
+3. ネットワークとサーバーをどこまで制御したいか
+4. 想定トラフィックと障害対応の水準
 5. 本番運用時の料金と制限
 
 小さなアプリでは単純な構成が運用上のメリットになります。複雑な要件がある場合は、最初の手軽さだけでなく、必要な制御範囲を基準に選ぶことが大切です。

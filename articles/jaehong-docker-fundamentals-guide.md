@@ -1,84 +1,84 @@
 ---
-title: "Docker入門：Image・Container・Composeから本番デプロイまで整理する"
+title: "Docker入門：イメージ・コンテナ・Composeから本番デプロイまで整理する"
 emoji: "🐳"
 type: "tech"
 topics: ["docker", "dockercompose", "aws", "springboot"]
-published: false
+published: true
 ---
 
-チーム開発でDockerを使っていても、`docker compose up`を実行するToolという理解だけでは、ImageとContainerの違いやデプロイで使う理由が分かりにくいことがあります。
+チーム開発でDockerを使っていても、`docker compose up`を実行するツールという理解だけでは、イメージとコンテナの違いやデプロイで使う理由が分かりにくいことがあります。
 
-Dockerの役割は、アプリケーションと実行に必要なFile・設定をImageとしてまとめ、隔離されたContainer Processとして実行できるようにすることです。
+Dockerの役割は、アプリケーションと実行に必要なファイル・設定をイメージとしてまとめ、隔離されたコンテナプロセスとして実行できるようにすることです。
 
-言い換えると、**実行環境をCodeとして管理するための仕組み**です。
+言い換えると、**実行環境をコードとして管理するための仕組み**です。
 
 ## Dockerが解決する環境差分
 
-同じSpring Boot Projectを複数の環境で実行する場合を考えます。
+同じSpring Bootプロジェクトを複数の環境で実行する場合を考えます。
 
 ```text
 開発者A  : Windows + Java 17 + MariaDB 10
 開発者B  : macOS   + Java 21 + MariaDB 11
-本番Server: Linux   + Javaなし + DBなし
+本番サーバー: Linux   + Javaなし + DBなし
 ```
 
-Source Codeが同じでも、次の違いによってErrorが発生する可能性があります。
+ソースコードが同じでも、次の違いによってエラーが発生する可能性があります。
 
-- JavaとDatabaseのVersion
-- OSとSystem Library
-- Environment Variableと設定File
-- 起動CommandとPort
-- InstallされているDependency
+- Javaとデータベースのバージョン
+- OSとシステムライブラリ
+- 環境変数と設定ファイル
+- 起動コマンドとポート
+- インストールされている依存関係
 
-Dockerでは必要な実行条件をFileに定義し、同じImageを開発者、CI、本番環境で利用することで差分を減らします。
+Dockerでは必要な実行条件をファイルに定義し、同じイメージを開発者、CI、本番環境で利用することで差分を減らします。
 
-## Docker Imageとは
+## Dockerイメージとは
 
-Container Imageは、Containerの実行に必要なFile、Binary、Library、設定を含む標準化されたPackageです。
+コンテナイメージは、コンテナの実行に必要なファイル、バイナリ、ライブラリ、設定を含む標準化されたパッケージです。
 
-Spring Bootの場合、次のような流れでImageを作成します。
+Spring Bootの場合、次のような流れでイメージを作成します。
 
 ```text
-Spring Source
-  ↓ Build
+Springのソースコード
+  ↓ ビルド
 app.jar
   +
 Dockerfile
   ↓ docker build
-Docker Image
+Dockerイメージ
 ```
 
-Imageは実行中のProcessではありません。実行環境を再現するための成果物です。作成済みのImageを直接変更するのではなく、Dockerfileを修正して新しいImageをBuildします。
+イメージは実行中のプロセスではありません。実行環境を再現するための成果物です。作成済みのイメージを直接変更するのではなく、Dockerfileを修正して新しいイメージをビルドします。
 
 ```text
-Image = 実行に必要な内容をまとめたImmutableなPackage
+イメージ = 実行に必要な内容をまとめた変更不可能なパッケージ
 ```
 
-## Docker Containerとは
+## Dockerコンテナとは
 
-Imageを実行するとContainerになります。
+イメージを実行するとコンテナになります。
 
 ```text
-Docker Image
+Dockerイメージ
   ↓ docker run
-Container
+コンテナ
 ```
 
-Containerは、Host上で隔離されて実行されるProcessです。同じImageから複数のContainerを起動できます。
+コンテナは、ホスト上で隔離されて実行されるプロセスです。同じイメージから複数のコンテナを起動できます。
 
 ```text
-                 ┌─ Spring Container 1
-Spring Image ────├─ Spring Container 2
-                 └─ Spring Container 3
+                       ┌─ Springコンテナ1
+Springイメージ ────────├─ Springコンテナ2
+                       └─ Springコンテナ3
 ```
 
-各Containerは同じ環境から起動しますが、実行中の状態は独立しています。
+各コンテナは同じ環境から起動しますが、実行中の状態は独立しています。
 
-Containerは交換できるものとして扱います。Database Fileのように残す必要があるDataはContainer内だけに保存せず、Volumeまたは外部のManaged Databaseに置きます。
+コンテナは交換できるものとして扱います。データベースファイルのように残す必要があるデータはコンテナ内だけに保存せず、ボリュームまたは外部のマネージドデータベースに置きます。
 
 ## Dockerfileを読む
 
-Build済みの`app.jar`を実行する、簡単なDockerfileは次のようになります。
+ビルド済みの`app.jar`を実行する、簡単なDockerfileは次のようになります。
 
 ```dockerfile
 FROM eclipse-temurin:17-jre
@@ -90,36 +90,36 @@ COPY app.jar app.jar
 ENTRYPOINT ["java", "-jar", "app.jar"]
 ```
 
-各Instructionの役割は次のとおりです。
+各命令の役割は次のとおりです。
 
-| Instruction | 役割 |
+| 命令 | 役割 |
 |---|---|
-| `FROM` | Java 17の実行環境をBase Imageにする |
-| `WORKDIR` | Container内の作業Directoryを指定する |
-| `COPY` | `app.jar`をImageへコピーする |
-| `ENTRYPOINT` | Container起動時のCommandを指定する |
+| `FROM` | Java 17の実行環境をベースイメージにする |
+| `WORKDIR` | コンテナ内の作業ディレクトリを指定する |
+| `COPY` | `app.jar`をイメージへコピーする |
+| `ENTRYPOINT` | コンテナ起動時のコマンドを指定する |
 
-このDockerfileからImageを作成し、Containerとして起動します。
+このDockerfileからイメージを作成し、コンテナとして起動します。
 
 ```bash
 docker build -t my-spring-app .
 docker run -p 8080:8080 my-spring-app
 ```
 
-1つ目のCommandは、現在のDirectoryにあるDockerfileから`my-spring-app` Imageを作成します。2つ目はHostの8080 PortをContainerの8080 Portへ接続して実行します。
+1つ目のコマンドは、現在のディレクトリにあるDockerfileから`my-spring-app`イメージを作成します。2つ目はホストの8080ポートをコンテナの8080ポートへ接続して実行します。
 
 ## Docker Composeが必要になる理由
 
-Webアプリケーションは、1つのContainerだけで完結しないことがあります。
+Webアプリケーションは、1つのコンテナだけで完結しないことがあります。
 
 ```text
-Frontend
-Backend
-Database
+フロントエンド
+バックエンド
+データベース
 Redis
 ```
 
-個別の`docker run`で起動すると、Port、Environment Variable、Network、Volumeの指定が増えます。Docker Composeでは、複数Containerの実行構成を1つのYAML Fileへ定義できます。
+個別の`docker run`で起動すると、ポート、環境変数、ネットワーク、ボリュームの指定が増えます。Docker Composeでは、複数コンテナの実行構成を1つのYAMLファイルへ定義できます。
 
 以下はSpring BootとMariaDBを一緒に実行するための、単純化した例です。
 
@@ -156,7 +156,7 @@ volumes:
   db-data:
 ```
 
-Passwordを`.env`などに設定し、次のCommandで起動します。
+パスワードを`.env`などに設定し、次のコマンドで起動します。
 
 ```bash
 docker compose up -d --build
@@ -164,120 +164,120 @@ docker compose up -d --build
 
 この構成では、次の点を確認できます。
 
-- Backendは`localhost`ではなくService名の`db`でDatabaseへ接続する
-- `db-data` VolumeにDatabaseのDataを保存する
-- `healthcheck`と`service_healthy`でDatabaseの準備完了後にBackendを開始する
+- バックエンドは`localhost`ではなくサービス名の`db`でデータベースへ接続する
+- `db-data`ボリュームにデータベースのデータを保存する
+- `healthcheck`と`service_healthy`でデータベースの準備完了後にバックエンドを開始する
 
-実際のPasswordを保存した`.env`はGitへCommitしません。本番環境では、利用するPlatformのSecret管理機能を使います。
+実際のパスワードを保存した`.env`はGitへコミットしません。本番環境では、利用するプラットフォームのシークレット管理機能を使います。
 
-## DockerfileとCompose Fileの違い
+## DockerfileとComposeファイルの違い
 
-2つのFileは目的が異なります。
+2つのファイルは目的が異なります。
 
-| File | 役割 |
+| ファイル | 役割 |
 |---|---|
-| `Dockerfile` | 1つのContainer Imageを作る方法を定義する |
-| `compose.yaml` | 複数Containerをどの設定で実行するか定義する |
+| `Dockerfile` | 1つのコンテナイメージを作る方法を定義する |
+| `compose.yaml` | 複数コンテナをどの設定で実行するか定義する |
 
-DockerfileでSpring Bootの実行環境を作り、Compose FileでSpring Boot ContainerとMariaDB、Redisなどを接続します。
+DockerfileでSpring Bootの実行環境を作り、ComposeファイルでSpring BootコンテナとMariaDB、Redisなどを接続します。
 
-## DockerとVirtual Machineの違い
+## Dockerと仮想マシンの違い
 
-Virtual MachineはGuest OS全体を実行します。Containerは一般にHostのKernelを共有しながらProcessを隔離します。
+仮想マシンはゲストOS全体を実行します。コンテナは一般にホストのカーネルを共有しながらプロセスを隔離します。
 
 ```text
-Virtual Machine
-Host OS
-└─ Hypervisor
-   └─ Guest OS
-      └─ Application
+仮想マシン
+ホストOS
+└─ ハイパーバイザー
+   └─ ゲストOS
+      └─ アプリケーション
 ```
 
 ```text
-Container
-Host OS
-└─ Container Runtime
-   ├─ Application A
-   └─ Application B
+コンテナ
+ホストOS
+└─ コンテナランタイム
+   ├─ アプリケーションA
+   └─ アプリケーションB
 ```
 
-この構造により、Containerは一般にVMより短時間で起動し、必要なResourceも少なくなります。
+この構造により、コンテナは一般にVMより短時間で起動し、必要なリソースも少なくなります。
 
-ただし、WindowsやmacOSのDocker DesktopでLinux Containerを実行する場合、内部ではLinux VMが使われます。「DockerではVMをまったく使わない」と理解すると正確ではありません。また、ContainerとVMでは隔離の仕組みが異なるため、Security設計で同じ境界として扱うこともできません。
+ただし、WindowsやmacOSのDocker DesktopでLinuxコンテナを実行する場合、内部ではLinux VMが使われます。「DockerではVMをまったく使わない」と理解すると正確ではありません。また、コンテナとVMでは隔離の仕組みが異なるため、セキュリティ設計で同じ境界として扱うこともできません。
 
 ## チーム開発でDockerを使う利点
 
 ### 実行環境をそろえる
 
-同じImageとCompose Fileを利用すると、Team Member間のJavaやDatabase Versionの違いを減らせます。
+同じイメージとComposeファイルを利用すると、チームメンバー間のJavaやデータベースバージョンの違いを減らせます。
 
 ```text
-Git Repository
-├─ Source Code
+Gitリポジトリ
+├─ ソースコード
 ├─ Dockerfile
 └─ compose.yaml
        ↓
 開発者A / 開発者B / CIが同じ構成を実行
 ```
 
-### Projectへの参加を簡単にする
+### プロジェクトへの参加を簡単にする
 
-READMEに複数のMiddlewareを手動Installする手順を並べる代わりに、Dockerを準備した後、Composeで必要なServiceを起動できます。
+READMEに複数のミドルウェアを手動インストールする手順を並べる代わりに、Dockerを準備した後、Composeで必要なサービスを起動できます。
 
 ### CIと本番環境の差を減らす
 
-Testを通過したImageをRegistryへPushし、本番環境でも同じImage IDを実行すると、Deployする成果物を明確にできます。
+テストを通過したイメージをレジストリへプッシュし、本番環境でも同じイメージIDを実行すると、デプロイする成果物を明確にできます。
 
-## Containerを使ったデプロイ
+## コンテナを使ったデプロイ
 
-Containerを使うデプロイは、次のような流れになります。
+コンテナを使うデプロイは、次のような流れになります。
 
 ```text
-Source Code
-  ↓ Build & Test
-Docker Image
-  ↓ Push
-Container Registry
-  ↓ Deploy
+ソースコード
+  ↓ ビルドとテスト
+Dockerイメージ
+  ↓ プッシュ
+コンテナレジストリ
+  ↓ デプロイ
 AWS ECS / Kubernetes / Cloud Run / Container Apps
 ```
 
-ServerごとにSSH接続してJavaをInstallし、JAR Fileを配置する代わりに、Deploy Platformへ実行するImageを指定します。
+サーバーごとにSSH接続してJavaをインストールし、JARファイルを配置する代わりに、デプロイプラットフォームへ実行するイメージを指定します。
 
-Trafficが増えた場合は、同じImageからContainer数を増やし、Load BalancerでRequestを分散できます。
+トラフィックが増えた場合は、同じイメージからコンテナ数を増やし、ロードバランサーでリクエストを分散できます。
 
 ```text
-                ┌─ Container 1
-ユーザー → LB ──├─ Container 2
-                └─ Container 3
+                ┌─ コンテナ1
+ユーザー → LB ──├─ コンテナ2
+                └─ コンテナ3
 ```
 
-Container数を増やすだけで自動的にScalingできるわけではありません。Sessionを外部へ保存するStateless設計、Databaseの接続数、同時実行、Monitoring、Costも合わせて検討します。
+コンテナ数を増やすだけで自動的にスケーリングできるわけではありません。セッションを外部へ保存するステートレス設計、データベースの接続数、同時実行、モニタリング、コストも合わせて検討します。
 
-## 開発用Databaseと本番Databaseを分けて考える
+## 開発用データベースと本番データベースを分けて考える
 
-Local開発では、MariaDBやPostgreSQLをComposeで起動すると、Installと初期化を簡単にできます。
+ローカル開発では、MariaDBやPostgreSQLをComposeで起動すると、インストールと初期化を簡単にできます。
 
 本番環境では、別の判断が必要です。
 
 ```text
-開発環境 → Docker ComposeのDatabase Container
-本番環境 → RDSなどのManaged Database
+開発環境 → Docker Composeのデータベースコンテナ
+本番環境 → RDSなどのマネージドデータベース
 ```
 
-本番でDatabase Containerを運用することもできますが、Backup、Restore、Disk障害、Version Update、High Availabilityを自分たちで担当します。運用範囲を小さくしたい場合はManaged Databaseが候補になります。
+本番でデータベースコンテナを運用することもできますが、バックアップ、リストア、ディスク障害、バージョン更新、高可用性を自分たちで担当します。運用範囲を小さくしたい場合はマネージドデータベースが候補になります。
 
 ## まとめ
 
 Dockerの基本を5つにまとめると、次のようになります。
 
-1. DockerfileはImageの作り方を定義する
-2. Imageは実行に必要な内容をまとめたImmutableなPackage
-3. ContainerはImageから起動する隔離されたProcess
-4. Composeは複数Containerの実行構成を管理する
-5. 永続DataとSecretをContainer内だけに置かない
+1. Dockerfileはイメージの作り方を定義する
+2. イメージは実行に必要な内容をまとめたイミュータブルなパッケージ
+3. コンテナはイメージから起動する隔離されたプロセス
+4. Composeは複数コンテナの実行構成を管理する
+5. 永続データとシークレットをコンテナ内だけに置かない
 
-Dockerの価値は、Commandを短くすることだけではありません。実行環境を再現可能なCodeとして扱える点にあります。この考え方を理解すると、Local開発の環境統一とContainerを使ったCloud Deployを1つの流れとして捉えられます。
+Dockerの価値は、コマンドを短くすることだけではありません。実行環境を再現可能なコードとして扱える点にあります。この考え方を理解すると、ローカル開発の環境統一とコンテナを使ったクラウドデプロイを1つの流れとして捉えられます。
 
 ## 参考資料
 

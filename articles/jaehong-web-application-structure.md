@@ -3,7 +3,7 @@ title: "React・Spring Boot・Docker・AWSの役割をWebアプリ全体像か�
 emoji: "🌐"
 type: "tech"
 topics: ["react", "springboot", "aws", "docker", "web"]
-published: false
+published: true
 ---
 
 以前のチーム開発では、React、Spring Boot、MariaDB、Docker、AWSを組み合わせてWebアプリケーションを構築しました。
@@ -17,11 +17,11 @@ published: false
 ```text
 ユーザー
   ↓
-Frontend
+フロントエンド
   ↓
-Backend
+バックエンド
   ↓
-Database
+データベース
 ```
 
 今回扱う技術を当てはめると、次のようになります。
@@ -40,11 +40,11 @@ MariaDB
 
 | 領域 | 技術例 | 主な役割 |
 |---|---|---|
-| Frontend | React | 画面表示とユーザー操作 |
-| Backend | Spring Boot | API、認証、業務ロジック |
-| Database | MariaDB | データの永続化 |
-| Container | Docker | 実行環境のパッケージ化 |
-| Infrastructure | AWS | インターネット上で実行する環境 |
+| フロントエンド | React | 画面表示とユーザー操作 |
+| バックエンド | Spring Boot | API、認証、業務ロジック |
+| データベース | MariaDB | データの永続化 |
+| コンテナ | Docker | 実行環境のパッケージ化 |
+| インフラ | AWS | インターネット上で実行する環境 |
 
 DockerとAWSは、画面やAPIの機能を直接作るものではありません。作成したアプリケーションを「どの環境で、どのように動かすか」を担当します。
 
@@ -112,7 +112,7 @@ SupabaseのData APIのようにブラウザからデータを扱える仕組み�
 
 Spring Bootのソースコードだけではアプリケーションを実行できません。Javaのバージョン、依存ファイル、環境変数、起動コマンドなどが必要です。
 
-Dockerはこれらの実行条件をImageとしてまとめます。
+Dockerはこれらの実行条件をイメージとしてまとめます。
 
 ```text
 Spring Bootアプリケーション
@@ -120,9 +120,9 @@ Spring Bootアプリケーション
 + 必要なファイル
 + 起動コマンド
         ↓
-Docker Image
+Dockerイメージ
         ↓ 実行
-Docker Container
+Dockerコンテナ
 ```
 
 DockerがSpring Bootの代わりになるわけではありません。Spring Bootを異なる環境でも同じ条件で起動しやすくする役割です。
@@ -160,7 +160,7 @@ React
   ↓ ログイン後の画面を表示
 ```
 
-Spring BootがDocker ContainerとしてAWS上で実行されている場合、DockerとAWSはこの処理の外側で実行環境と稼働場所を支えます。
+Spring BootがDockerコンテナとしてAWS上で実行されている場合、DockerとAWSはこの処理の外側で実行環境と稼働場所を支えます。
 
 ## まとめ
 

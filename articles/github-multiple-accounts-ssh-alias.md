@@ -3,7 +3,7 @@ title: "複数のGitHubアカウントを分ける：SSHエイリアスと内蔵
 emoji: "🔐"
 type: "tech"
 topics: ["git", "github", "ssh", "windows"]
-published: false
+published: true
 ---
 
 1台のWindows PCで、個人用と業務用のGitHubアカウントを使い分ける必要がありました。
