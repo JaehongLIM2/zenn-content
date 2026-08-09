@@ -4,6 +4,7 @@ emoji: "🐳"
 type: "tech"
 topics: ["docker", "dockercompose", "aws", "springboot"]
 published: true
+published_at: 2026-08-13 09:00
 ---
 
 チーム開発でDockerを使っていても、`docker compose up`を実行するツールという理解だけでは、イメージとコンテナの違いやデプロイで使う理由が分かりにくいことがあります。

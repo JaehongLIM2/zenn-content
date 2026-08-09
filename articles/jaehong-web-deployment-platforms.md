@@ -4,6 +4,7 @@ emoji: "🚀"
 type: "tech"
 topics: ["aws", "vercel", "railway", "deploy"]
 published: true
+published_at: 2026-08-14 09:00
 ---
 
 Webアプリケーションのデプロイ先を調べると、Vercel、Railway、AWSといったサービスが候補に挙がります。

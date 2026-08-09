@@ -4,6 +4,7 @@ emoji: "🌐"
 type: "tech"
 topics: ["react", "springboot", "aws", "docker", "web"]
 published: true
+published_at: 2026-08-11 09:00
 ---
 
 以前のチーム開発では、React、Spring Boot、MariaDB、Docker、AWSを組み合わせてWebアプリケーションを構築しました。
