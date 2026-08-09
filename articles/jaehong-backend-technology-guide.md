@@ -1,0 +1,215 @@
+---
+title: "バックエンド技術の選び方：Spring Boot・NestJS・FastAPI・Next.js・BaaS"
+emoji: "⚙️"
+type: "tech"
+topics: ["backend", "springboot", "nextjs", "supabase"]
+published: false
+---
+
+バックエンドにはSpring Boot、Node.js、NestJS、FastAPI、Goなど、多くの選択肢があります。Next.jsのサーバー機能やSupabaseのようなBaaSを利用すれば、独立したAPIサーバーを持たない構成も可能です。
+
+技術名だけを比較すると迷いやすいため、バックエンドが担当する責任と、プロジェクトの要件から選択基準を整理します。
+
+## バックエンドが担当すること
+
+ショッピングサイトの注文処理を例にすると、バックエンドは受け取った値をそのままデータベースへ保存するだけではありません。
+
+```text
+注文Requestを受信
+  ↓
+ユーザー認証を確認
+  ↓
+商品価格と在庫を検索
+  ↓
+割引と送料を計算
+  ↓
+決済Serviceを呼び出す
+  ↓
+注文Dataを保存
+  ↓
+処理結果を返す
+```
+
+この流れには、次のような責任が含まれます。
+
+- APIの提供
+- 認証と権限の確認
+- 入力値の検証
+- 業務ロジックの実行
+- トランザクション管理
+- データベースへのアクセス
+- 外部サービスとの連携
+- ログとエラー処理
+
+フロントエンドのコードはブラウザへ配信されます。API Key、決済の検証、管理者権限など、ユーザー側へ公開できない処理は信頼できるサーバー環境に置く必要があります。
+
+## Spring Boot：複雑な業務ロジックを整理する
+
+Spring BootはJavaでバックエンドアプリケーションを構築するフレームワークです。役割を分離しながら、複雑な業務ルールやトランザクションを扱える点に強みがあります。
+
+よく使われる構成は次のとおりです。
+
+```text
+Controller  → HTTP Request / Response
+Service     → Business Logic
+Repository  → Database Access
+Domain      → DataとRule
+```
+
+次のような要件で候補になります。
+
+- 複数の業務ルールとトランザクションが関係する
+- 長期間保守する業務システム
+- Java経験者が多いチーム
+- レイヤーとテスト方針を明確にしたい
+- バッチ処理や外部システム連携がある
+
+一方、単純なCRUDだけを持つ小さなアプリケーションでは、初期構成や学習範囲が大きく感じられる場合があります。
+
+## Node.jsとNestJS：TypeScriptを共通言語にする
+
+Node.jsを利用すると、FrontendとBackendの両方をJavaScriptまたはTypeScriptで開発できます。
+
+Node.js自体はランタイムであり、実際のAPI開発ではExpress、Fastify、NestJSなどを組み合わせます。NestJSはModule、Controller、Provider、Dependency Injectionを提供し、役割を分けた構成を作りやすいフレームワークです。
+
+```text
+TypeScript
+├─ React / Next.js フロントエンド
+└─ NestJS バックエンド
+```
+
+次のようなケースで検討できます。
+
+- チームがJavaScript・TypeScriptに慣れている
+- I/O中心のAPIやリアルタイム通信が多い
+- Frontendと型やToolを共有したい
+- Springに近い構造的な開発方法を選びたい
+
+言語を統一しても、FrontendとBackendの責任まで同じになるわけではありません。認証情報の保護や権限判断はサーバー側で行います。
+
+## FastAPI：Pythonの処理をAPIとして公開する
+
+FastAPIはPythonでAPIを構築するフレームワークです。Type Hintを利用したリクエスト検証や、APIドキュメントの生成を行いやすい特徴があります。
+
+- Machine Learning Modelの推論API
+- データ処理サービス
+- Python Libraryとの連携が多いバックエンド
+- 小規模な内部ツールやMicroservice
+
+フレームワークが軽量でも、規模が大きくなるとDirectory構成、Dependency管理、非同期処理などのチーム内ルールが必要です。
+
+## Go：実行環境を単純にしやすい
+
+Goは単一の実行ファイルへCompileしやすく、並行処理や実行効率を重視するサーバーで使われます。
+
+- Throughputが重要なAPI
+- Network ToolやInfrastructure Service
+- 小さなContainer Imageが必要
+- ランタイム構成を単純にしたい
+
+ただし、実際のボトルネックがCPUやMemoryではない場合、性能だけを理由にチームが慣れていない言語へ変更する効果は限定的です。保守性や障害対応まで含めて判断します。
+
+## Next.jsのサーバー機能：1つのProjectで完結させる
+
+Next.jsではUIだけでなく、Route HandlerやServer Actionなどのサーバー機能も利用できます。
+
+```text
+Next.js
+├─ UI
+├─ Server Logic
+└─ Database Access
+```
+
+管理画面、Contents Site、小規模な会員制Webサービスなどでは、フロントエンドとバックエンドを別Repositoryに分けず、1つのプロジェクトで管理できる点が便利です。
+
+一方で、複数のClientが共通APIを使う場合や、長時間Job、独立したScaling、複雑なDomain Logicが必要になった場合は、バックエンドを分離した方が責任範囲を明確にできます。
+
+## BaaSを使うとバックエンドは不要になるのか
+
+SupabaseなどのBaaS（Backend as a Service）は、PostgreSQLに加えてAuth、Storage、Realtime、Functionsなどを提供します。
+
+```text
+Next.js
+  ↓
+Supabase
+├─ PostgreSQL
+├─ Auth
+├─ Storage
+├─ Realtime
+└─ Edge Functions
+```
+
+ログイン、ファイルUpload、基本的なCRUDのために、最初からSpring Bootサーバーを構築しなくてもよいケースがあります。
+
+ただし、バックエンドの責任が消えたわけではありません。自分で実装していた機能の一部をプラットフォームが担当します。開発者側には、引き続き次の設計が必要です。
+
+- 誰がどのデータへAccessできるか
+- 入力値をどこで検証するか
+- 決済や管理者機能をどこで実行するか
+- Secretをどのように保護するか
+- プラットフォームの制限と料金をどう扱うか
+
+SupabaseのData APIをブラウザから利用する場合、公開するTableにRow Level Securityを設定します。管理者権限を持つSecret KeyやDatabase接続情報をFrontendへ含めてはいけません。
+
+## 選択前に確認する5つの項目
+
+### 1. 業務ルールとTransactionの複雑さ
+
+注文、精算、権限などが複雑に関係する場合は、LayerとTransaction管理が充実したFrameworkが候補になります。
+
+### 2. Teamが扱える言語
+
+開発速度だけでなく、コードレビュー、障害対応、長期保守にも影響します。
+
+### 3. 独立したAPIが必要か
+
+Web、Mobile、外部サービスが同じAPIを使うなら独立したバックエンドが自然です。Web画面だけの小規模サービスでは、Next.jsのサーバー機能で足りることもあります。
+
+### 4. 長時間実行する処理があるか
+
+大容量File処理やBatchは、短時間のRequest処理を前提とするServerless環境に合わない場合があります。WorkerやQueueも含めて考えます。
+
+### 5. どこまで自分たちで運用するか
+
+BaaSは開始を早くできますが、プラットフォームの仕様と料金に依存します。独立したバックエンドは制御範囲が広い一方、SecurityとDeployの責任も増えます。
+
+## 目的別の構成例
+
+バックエンドの基本を学ぶ場合は、次の構成でAPI、SQL、認証、トランザクション、Deployまで確認できます。
+
+```text
+React
+  ↓ REST API
+Spring Boot
+  ↓
+PostgreSQL
+  ↓
+Docker
+```
+
+小規模なサービスを早く検証する場合は、次のような構成があります。
+
+```text
+Next.js
+  ↓
+Supabase
+  ↓
+Vercel
+```
+
+どちらか一方だけを使い続ける必要はありません。BaaSで開始し、複雑になった処理だけを独立したバックエンドへ分離する方法もあります。
+
+## まとめ
+
+Spring Boot、Next.jsのサーバー機能、BaaSは、担当する範囲と開発者が持つ責任が異なります。
+
+小さなアプリケーションでは単純な構成が保守しやすく、複雑な業務システムでは明確なレイヤーと独立したバックエンドが役立ちます。流行だけで決めず、要件を満たしたうえでチームが継続して運用できる技術を選ぶことが大切です。
+
+## 参考資料
+
+- [Spring Boot公式ドキュメント](https://docs.spring.io/spring-boot/)
+- [NestJS公式ドキュメント](https://docs.nestjs.com/)
+- [FastAPI公式ドキュメント](https://fastapi.tiangolo.com/)
+- [Next.js公式ドキュメント](https://nextjs.org/docs)
+- [Supabase Database](https://supabase.com/docs/guides/database/overview)
+- [Supabase: Securing your data](https://supabase.com/docs/guides/database/secure-data)

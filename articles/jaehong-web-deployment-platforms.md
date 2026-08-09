@@ -1,0 +1,183 @@
+---
+title: "Vercel・Railway・AWSの違いからWebアプリのデプロイ先を考える"
+emoji: "🚀"
+type: "tech"
+topics: ["aws", "vercel", "railway", "deploy"]
+published: false
+---
+
+Webアプリケーションのデプロイ先を調べると、Vercel、Railway、AWSといったサービスが候補に挙がります。
+
+ただし、この3つは同じ範囲を担当するサービスではありません。単純に新旧や優劣で比較するより、**開発者がどこまでインフラを管理するか**という観点で整理すると選びやすくなります。
+
+## デプロイで必要になるもの
+
+Webサイトを公開するには、ソースコードをサーバーへ置くだけでなく、次のような要素が必要です。
+
+- アプリケーションのBuild
+- サーバー、または静的ファイルの保存先
+- DomainとDNS
+- HTTPS証明書
+- CDN
+- CI/CD
+- LogとMonitoring
+
+Reactの静的サイトをAWSで構成する場合、たとえば次のような流れになります。
+
+```text
+GitHub
+  ↓ Build
+S3
+  ↓
+CloudFront
+  ↓
+Route 53 + HTTPS
+  ↓
+ユーザー
+```
+
+構成を細かく選べる一方で、それぞれのサービスを接続して運用する必要があります。VercelやRailwayのような管理型プラットフォームは、この作業の一部を標準機能として引き受けます。
+
+## Vercel：フロントエンドを素早く公開する
+
+Vercelでは、Git Repositoryを連携すると、Pushを契機にBuildとDeployが実行されます。
+
+```text
+GitHub
+  ↓ git push
+Vercel
+  ├─ Build
+  ├─ Deploy
+  ├─ HTTPS
+  ├─ CDN
+  └─ Preview URL
+```
+
+Reactの静的サイトだけでなく、Next.jsアプリケーションやFunctionsもデプロイできます。Pull RequestごとにPreview環境を確認できるため、画面変更のレビューにも向いています。
+
+候補になりやすいのは次のようなケースです。
+
+- PortfolioやTechnical Blog
+- React、Next.jsを使ったWebアプリ
+- 早い段階で確認したいMVP
+- フロントエンドが中心のサービス
+- 短時間で完了するサーバー処理
+
+一方、長時間動くJob、特殊なNetwork、OSレベルの制御が必要なバックエンドでは、別の実行基盤を検討した方が自然です。
+
+### Hobby Planを利用するときの注意
+
+2026年8月時点の公式ドキュメントでは、Hobby Planは個人・非商用のプロジェクト向けです。業務や商用サービスで利用する場合は、最新の利用条件とPro Planを確認する必要があります。
+
+無料枠の有無だけでなく、Functionの実行時間や転送量など、アプリケーションに関係する制限もデプロイ前に確認します。
+
+## Railway：バックエンドとデータベースを簡単に配置する
+
+Railwayは、Spring BootやNode.jsなどのバックエンドとPostgreSQLを、比較的少ない設定でデプロイできるプラットフォームです。
+
+```text
+Frontend  → Vercel
+Backend   → Railway / Spring Boot
+Database  → Railway / PostgreSQL
+```
+
+Spring Bootは、GitHub Repository、Railway CLI、Dockerfileなどからデプロイできます。EC2へSSH接続してJavaやプロセス管理ツールを設定する作業を減らせるため、まずAPIを外部から確認したいときに便利です。
+
+次のようなケースで検討できます。
+
+- 独立したBackend APIが必要
+- Spring Bootを短時間で公開したい
+- ApplicationとDatabaseを同じProject内で接続したい
+- Infrastructureの構築より機能検証を優先したい
+
+ただし、実行方法や料金はRailwayの仕様に依存します。NetworkやSecurityを細かく設計する必要がある場合は、要件を満たせるか先に確認します。
+
+## AWS：必要なインフラを組み合わせる
+
+AWSは、VercelやRailwayと同じ範囲だけを扱うサービスではありません。Compute、Storage、Database、Network、Securityなどを組み合わせるCloud Platformです。
+
+ReactとSpring Bootを使う場合、次のような構成が考えられます。
+
+```text
+ユーザー
+  ├─ React → S3 + CloudFront
+  └─ API   → Load Balancer → ECS / Spring Container
+                                  ↓
+                               RDS PostgreSQL
+```
+
+学習用であれば、最初はEC2上でDocker Containerを1つ動かす構成も選べます。要件の増加に合わせてLoad BalancerやECSへ移行する方法もあります。
+
+AWSが候補になりやすいのは次のような場合です。
+
+- NetworkやSecurityを細かく制御したい
+- 複数のBackendや非同期Jobを運用する
+- Container、Load Balancer、Auto Scalingが必要
+- 組織の権限管理や監査要件がある
+- Cloud Infrastructure自体を学習したい
+
+自由度が高い分、Cost、Security、Monitoring、障害対応まで、設計する範囲も広くなります。
+
+## 3つの選択肢を比較する
+
+| 観点 | Vercel | Railway | AWS |
+|---|---|---|---|
+| 主な強み | Frontend・Next.js | Backend・DBの簡単なDeploy | 幅広いInfrastructure |
+| 導入の難易度 | 低い | 低い〜中程度 | 中程度〜高い |
+| Server制御 | 限定的 | 限定的 | 広い |
+| 運用負担 | 少ない | 少ない〜中程度 | 構成による |
+| 向いている例 | Portfolio、MVP | API、小規模Service | 複雑なService、企業System |
+
+同じプロジェクトで複数のサービスを組み合わせることもできます。
+
+## 構成例
+
+### 静的なPortfolio
+
+```text
+React + Vercel
+```
+
+APIもデータベースも不要であれば、構成を増やさない方が管理しやすくなります。
+
+### Spring Bootを学ぶ個人開発
+
+```text
+React       → Vercel
+Spring Boot → Railway
+PostgreSQL  → Railway
+```
+
+バックエンドは自分で実装しつつ、サーバー構築の負担を抑える構成です。
+
+### Infrastructureまで扱うチーム開発
+
+```text
+React       → S3 / CloudFront
+Spring Boot → Docker / ECS
+PostgreSQL  → RDS
+```
+
+Container、Network、CI/CD、Monitoringまで学習対象にできます。
+
+## まとめ
+
+最近の流れは、AWSからVercelへ単純に置き換わったということではありません。アプリケーションの要件に応じて、管理をプラットフォームへ任せる範囲を選べるようになったと考える方が適切です。
+
+デプロイ先を決めるときは、次の順で確認します。
+
+1. 静的なFrontendか、常時動くBackendか
+2. Databaseや長時間Jobが必要か
+3. NetworkとServerをどこまで制御したいか
+4. 想定Trafficと障害対応の水準
+5. 本番運用時の料金と制限
+
+小さなアプリでは単純な構成が運用上のメリットになります。複雑な要件がある場合は、最初の手軽さだけでなく、必要な制御範囲を基準に選ぶことが大切です。
+
+## 参考資料
+
+- [VercelのPlan](https://vercel.com/docs/plans)
+- [Vercel Hobby Plan](https://vercel.com/docs/plans/hobby)
+- [Railway: Deploy a Spring Boot App](https://docs.railway.com/guides/spring-boot)
+- [Railway PostgreSQL](https://docs.railway.com/databases/postgresql)
+- [AWSの製品一覧](https://aws.amazon.com/jp/products/)
