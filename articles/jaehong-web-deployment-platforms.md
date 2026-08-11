@@ -3,8 +3,7 @@ title: "Vercel・Railway・AWSの違いからWebアプリのデプロイ先を�
 emoji: "🚀"
 type: "tech"
 topics: ["aws", "vercel", "railway", "deploy"]
-published: true
-published_at: 2026-08-14 09:00
+published: false
 ---
 
 Webアプリケーションのデプロイ先を調べると、Vercel、Railway、AWSといったサービスが候補に挙がります。
@@ -23,18 +22,11 @@ Webサイトを公開するには、ソースコードをサーバーへ置く�
 - CI/CD
 - ログとモニタリング
 
-Reactの静的サイトをAWSで構成する場合、たとえば次のような流れになります。
+Reactの静的サイトをAWSで構成する場合、デプロイとユーザーからのアクセスは次のように分けて考えられます。
 
 ```text
-GitHub
-  ↓ ビルド
-S3
-  ↓
-CloudFront
-  ↓
-Route 53 + HTTPS
-  ↓
-ユーザー
+デプロイ: GitHub → ビルド → S3 → CloudFront
+アクセス: ユーザー → Route 53 → CloudFront（HTTPS / ACM）→ S3
 ```
 
 構成を細かく選べる一方で、それぞれのサービスを接続して運用する必要があります。VercelやRailwayのような管理型プラットフォームは、この作業の一部を標準機能として引き受けます。

@@ -3,8 +3,7 @@ title: "git fetchとgit pullの違いをorigin/main・upstreamから理解する
 emoji: "🔄"
 type: "tech"
 topics: ["git", "github", "初心者", "バージョン管理"]
-published: true
-published_at: 2026-08-18 09:00
+published: false
 ---
 
 GitHubの変更をローカルへ反映するとき、`git pull`だけを覚えていると、内部で何が変わったのか分かりにくくなることがあります。

@@ -3,8 +3,7 @@ title: "Gitで「元に戻す」を選び間違えない：restore・amend・res
 emoji: "↩️"
 type: "tech"
 topics: ["git", "github", "初心者", "バージョン管理"]
-published: true
-published_at: 2026-08-16 09:00
+published: false
 ---
 
 Gitには変更を「元に戻す」ためのコマンドが複数あります。

@@ -3,8 +3,7 @@ title: "React・Spring Boot・Docker・AWSの役割をWebアプリ全体像か�
 emoji: "🌐"
 type: "tech"
 topics: ["react", "springboot", "aws", "docker", "web"]
-published: true
-published_at: 2026-08-11 09:00
+published: false
 ---
 
 以前のチーム開発では、React、Spring Boot、MariaDB、Docker、AWSを組み合わせてWebアプリケーションを構築しました。
