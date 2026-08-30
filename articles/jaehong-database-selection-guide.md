@@ -3,12 +3,14 @@ title: "PostgreSQL・MariaDB・Redis・Supabase・Neonの使い分けを整理�
 emoji: "🗄️"
 type: "tech"
 topics: ["postgresql", "mariadb", "redis", "supabase", "neon"]
-published: false
+published: true
 ---
 
 Webアプリケーションでデータベースを選ぶとき、「最近よく使われているもの」だけを基準にすると判断が難しくなります。
 
 データ構造、トランザクション、チームの経験、運用方法によって適切な選択肢は変わります。今回はPostgreSQL、MySQL・MariaDB、Redisの役割と、Supabase、Neonの違いを整理します。
+
+> サービスの提供範囲は変化が速いため、SupabaseとNeonに関する記述は2026年8月30日時点の公式情報を基準にしています。
 
 ## 最初にリレーショナルデータベースを確認する
 
@@ -82,9 +84,9 @@ OracleとSQL Serverは、企業の業務システムで利用されることが�
 
 個人学習ではPostgreSQLやMySQL系でSQLとトランザクションの基本を学び、担当するシステムに応じて商用データベース固有の機能を追加で学ぶ進め方もできます。
 
-## RedisはPostgreSQLの代わりではない
+## Redisは目的を分けて考える
 
-Redisは高速なインメモリデータストアです。PostgreSQLやMariaDBと同じ目的で置き換えるのではなく、次のような用途で併用します。
+Redisは高速なインメモリデータストアです。RDBやAOFによる永続化もできますが、典型的なWebアプリケーションではPostgreSQLやMariaDBと役割を分け、次のような用途で併用します。
 
 - 繰り返し参照する結果のキャッシュ
 - セッションと有効期限の短い認証データ
@@ -97,7 +99,7 @@ PostgreSQL → 元データを永続化する
 Redis      → よく使うデータを高速に返す
 ```
 
-キャッシュは削除されたり古くなったりすることを前提に設計します。注文の原本など、失ってはいけないデータをRedisだけに保存する構成は避けます。
+キャッシュとして使う場合は、データが削除されたり古くなったりすることを前提に設計します。注文の原本などをRedisに保存するなら、単なるキャッシュ設定のまま使わず、永続化方式、レプリケーション、バックアップ、許容できるデータ損失の範囲を要件として決める必要があります。
 
 ## マネージドデータベースを使う理由
 
@@ -144,7 +146,7 @@ Supabase
 
 Supabaseはデータベース設計を代行するサービスではありません。PostgreSQLと、よく使うバックエンド機能をまとめて提供するBaaSです。
 
-## Neon：サーバーレスPostgreSQLに集中する
+## Neon：PostgreSQLを中心にバックエンドを構成する
 
 NeonはサーバーレスPostgreSQLプラットフォームです。コンピュートとストレージを分離し、オートスケーリング、データベースブランチ、ポイントインタイムリストアなどの機能を提供します。
 
@@ -156,17 +158,22 @@ Prisma / Drizzle / SQLドライバー
 Neon PostgreSQL
 ```
 
-Supabaseとの違いは、主に提供範囲です。
+NeonはPostgreSQLだけを提供するサービスとして始まりましたが、現在はManaged Better Authによる認証も提供しています。さらにObject Storage、Functions、AI Gatewayがベータとして追加され、PostgreSQLを中心としたバックエンドプラットフォームへ範囲を広げています。
+
+Supabaseとの違いは、単純な「BaaSかデータベースか」ではなく、各機能の成熟度と設計の中心にあります。
 
 | 観点 | Supabase | Neon |
 |---|---|---|
-| 中心 | PostgreSQLを基盤にしたBaaS | サーバーレスPostgreSQL |
-| 認証 | 統合機能を提供 | 必要に応じて別サービスを選択 |
-| ファイルストレージ | 統合機能を提供 | 別サービスを組み合わせる |
-| リアルタイム | 統合機能を提供 | 要件に合わせて構成する |
-| 選択例 | バックエンド機能をまとめたい | PostgreSQLを中心に自由に組みたい |
+| 中心 | PostgreSQLを基盤にしたBaaS | ブランチ可能なサーバーレスPostgreSQLを中心とするプラットフォーム |
+| 認証 | Authを統合 | Managed Better Authを統合 |
+| ファイルストレージ | Storageを統合 | S3互換Object Storageをベータ提供 |
+| リアルタイム | Realtimeを統合 | PostgreSQLとアプリケーション側で要件に応じて構成 |
+| サーバー側処理 | Edge Functionsを提供 | Functionsをベータ提供 |
+| 選択例 | 成熟したバックエンド機能をまとめて使いたい | データと周辺機能をブランチ単位で分離したい |
 
-認証、ストレージ、データベースを1つのプラットフォームで使いたいならSupabase、PostgreSQLだけをマネージドサービスとして利用し、他の機能を個別に選びたいならNeonが候補になります。
+認証、ストレージ、リアルタイムなどを実績のある統合機能としてまとめて使いたいならSupabaseが候補になります。PostgreSQLを中心に、プレビュー環境やテスト環境をデータと周辺機能ごとブランチ化したいならNeonが候補になります。
+
+ただし、NeonのObject StorageとFunctionsなどは2026年8月30日時点でベータです。対応リージョンや運用上の制限もあるため、本番採用では最新の提供状況を公式ドキュメントで確認します。
 
 ## 構成ごとの選択例
 
@@ -194,13 +201,13 @@ Next.js + Supabase
 
 データベース、認証、ストレージを同じプラットフォームで構成できます。
 
-### PostgreSQL以外を個別に選ぶ
+### データベース以外の機能を個別に選ぶ
 
 ```text
 Next.js + 認証サービス + オブジェクトストレージ + Neon
 ```
 
-各要素を独立して選択したい場合の構成です。
+Neonをデータベースとして利用し、認証やファイル保存には別のサービスを選ぶ構成も引き続き可能です。各要素の成熟度、リージョン、料金を個別に判断したい場合に向いています。
 
 ### 参照負荷が大きいサービス
 
@@ -214,7 +221,7 @@ PostgreSQLを元データの保存先とし、繰り返し参照するデータ�
 
 新しい一般的なWebプロジェクトでは、PostgreSQLは有力な出発点です。ただし、MariaDBが古い選択肢になるわけではありません。
 
-データベースを選ぶときは、機能の多さだけでなく、チームがデータの整合性、バックアップ、リストアまで継続して扱えるかを確認します。また、SupabaseとNeonは「どちらのデータベースが優れているか」ではなく、データベース以外のバックエンド機能をどこまで同じプラットフォームへ任せるかで比較すると分かりやすくなります。
+データベースを選ぶときは、機能の多さだけでなく、チームがデータの整合性、バックアップ、リストアまで継続して扱えるかを確認します。また、SupabaseとNeonは「どちらのデータベースが優れているか」ではなく、必要なバックエンド機能の成熟度、データやファイルのブランチ戦略、リージョン、運用方法を含めて比較すると分かりやすくなります。
 
 ## 参考資料
 
@@ -222,4 +229,7 @@ PostgreSQLを元データの保存先とし、繰り返し参照するデータ�
 - [Supabase データベース](https://supabase.com/docs/guides/database/overview)
 - [Supabase: Securing your data](https://supabase.com/docs/guides/database/secure-data)
 - [Neon Documentation](https://neon.com/docs/introduction)
+- [Neon Auth](https://neon.com/docs/neon-auth/overview)
+- [Neon backend beta](https://neon.com/blog/neon-backend-is-beta)
 - [Redis Documentation](https://redis.io/docs/latest/)
+- [Redis persistence](https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/)
