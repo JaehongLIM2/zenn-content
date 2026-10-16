@@ -3,7 +3,7 @@ title: "Docker入門：イメージ・コンテナ・Composeから本番デプ�
 emoji: "🐳"
 type: "tech"
 topics: ["docker", "dockercompose", "aws", "springboot"]
-published: false
+published: true
 ---
 
 チーム開発でDockerを使っていても、`docker compose up`を実行するツールという理解だけでは、イメージとコンテナの違いやデプロイで使う理由が分かりにくいことがあります。
@@ -74,7 +74,7 @@ Springイメージ ────────├─ Springコンテナ2
 
 各コンテナは同じ環境から起動しますが、実行中の状態は独立しています。
 
-コンテナは交換できるものとして扱います。データベースファイルのように残す必要があるデータはコンテナ内だけに保存せず、ボリュームまたは外部のマネージドデータベースに置きます。
+コンテナは、必要に応じて作り直して交換できるものとして扱います。データベースファイルのように残す必要があるデータはコンテナ内だけに保存せず、ボリュームまたは外部のマネージドデータベースに置きます。
 
 ## Dockerfileを読む
 
@@ -203,7 +203,7 @@ DockerfileでSpring Bootの実行環境を作り、ComposeファイルでSpring 
 
 この構造により、コンテナは一般にVMより短時間で起動し、必要なリソースも少なくなります。
 
-ただし、WindowsやmacOSのDocker DesktopでLinuxコンテナを実行する場合、内部ではLinux VMが使われます。「DockerではVMをまったく使わない」と理解すると正確ではありません。また、コンテナとVMでは隔離の仕組みが異なるため、セキュリティ設計で同じ境界として扱うこともできません。
+ただし、WindowsやmacOSのDocker DesktopでLinuxコンテナを実行する場合、内部ではLinux VMが使われます。「DockerではVMをまったく使わない」と理解すると正確ではありません。また、コンテナとVMでは隔離の仕組みが異なるため、セキュリティ設計では同じ隔離境界として扱えません。
 
 ## チーム開発でDockerを使う利点
 
@@ -226,7 +226,7 @@ READMEに複数のミドルウェアを手動インストールする手順を�
 
 ### CIと本番環境の差を減らす
 
-テストを通過したイメージをレジストリへプッシュし、本番環境でも同じイメージIDを実行すると、デプロイする成果物を明確にできます。
+テストを通過したイメージをレジストリへプッシュし、本番環境でも同じイメージダイジェストを指定すると、デプロイする成果物を明確にできます。
 
 ## コンテナを使ったデプロイ
 
@@ -284,5 +284,6 @@ Dockerの価値は、コマンドを短くすることだけではありませ�
 - [Docker: What is a container?](https://docs.docker.com/get-started/docker-concepts/the-basics/what-is-a-container/)
 - [Docker: What is an image?](https://docs.docker.com/get-started/docker-concepts/the-basics/what-is-an-image/)
 - [What is Docker Compose?](https://docs.docker.com/get-started/docker-concepts/the-basics/what-is-docker-compose/)
+- [Docker: Running containers](https://docs.docker.com/engine/containers/run/)
 - [Control startup and shutdown order in Compose](https://docs.docker.com/compose/how-tos/startup-order/)
 - [MariaDB: Using healthcheck.sh](https://mariadb.com/docs/server/server-management/automated-mariadb-deployment-and-administration/docker-and-mariadb/using-healthcheck-sh)
