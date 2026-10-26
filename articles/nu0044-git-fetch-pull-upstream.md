@@ -3,7 +3,7 @@ title: "git fetchとgit pullの違いをorigin/main・upstreamから理解する
 emoji: "🔄"
 type: "tech"
 topics: ["git", "github", "初心者", "バージョン管理"]
-published: false
+published: true
 ---
 
 GitHubの変更をローカルへ反映するとき、`git pull`だけを覚えていると、内部で何が変わったのか分かりにくくなることがあります。
@@ -61,7 +61,7 @@ git fetch origin
 `fetch`はリモートからコミットや参照を取得し、設定されたリモート追跡ブランチを更新します。
 
 ```text
-GitHub main
+GitHub上のmain
     ↓ git fetch origin
 origin/main を更新
 
@@ -98,7 +98,7 @@ git pull --ff-only
 
 そのため、`git pull`を常に「fetch + merge」とだけ説明すると、リポジトリごとの設定差を見落とします。
 
-## 初めはfetchと統合を分ける
+## 慣れないうちはfetchと統合を分ける
 
 リモートの状態を理解しながら進めたい場合は、次の順序が分かりやすくなります。
 
@@ -111,9 +111,35 @@ git merge --ff-only origin/main
 
 `--ff-only`で失敗した場合は、ローカルとリモートが分岐しています。すぐに別のコマンドを試すのではなく、グラフを確認してmergeまたはrebaseを選びます。
 
+### 検証：分岐したブランチではff-onlyが停止する
+
+動作を確認するため、1つの検証用リモートリポジトリを2つの作業ディレクトリへcloneしました。一方で「リモート側の変更」をpushし、もう一方には「ローカル側の変更」をcommitしてから`fetch`しています。検証環境はGit 2.49.0 for Windowsです。
+
+```console
+$ git status -sb
+## main...origin/main [ahead 1, behind 1]
+```
+
+ローカルとリモートに1件ずつ固有のコミットがあることを、次のコマンドでも確認できました。
+
+```console
+$ git log --left-right --format="%m %s" 'HEAD...@{upstream}'
+< ローカル側の変更
+> リモート側の変更
+```
+
+この状態ではfast-forwardできないため、`--ff-only`は履歴を自動で統合せず停止します。
+
+```console
+$ git merge --ff-only origin/main
+fatal: Not possible to fast-forward, aborting.
+```
+
+この失敗は異常ではなく、意図しないマージコミットやrebaseを避けるための確認結果です。今回は検証だけなので統合しませんでした。実際の作業では、共有ブランチの運用方針とコミット内容を確認してからmergeまたはrebaseを選びます。
+
 ## upstreamブランチとは
 
-ローカルブランチは、既定のpush・pull対象となるリモートブランチを持てます。この追跡関係がupstreamです。
+ローカルブランチには、追跡先となるupstreamブランチを設定できます。これは引数を省略した`git pull`や、ahead/behindの比較に使われます。upstreamは別のローカルブランチにも設定できますが、ここではリモート追跡ブランチを使う一般的な構成を説明します。
 
 新しい作業ブランチを初めてpushする例です。
 
@@ -123,12 +149,14 @@ git push -u origin feat-docs
 
 `-u`は`--set-upstream`の短縮形です。ローカル`feat-docs`と`origin/feat-docs`の関係を設定します。
 
-以降はリモート名とブランチ名を省略できます。
+同名ブランチを追跡し、既定の`push.default=simple`を使う一般的な構成では、以降はリモート名とブランチ名を省略できます。
 
 ```bash
 git push
 git pull
 ```
+
+ただし、push先はupstreamだけで決まるわけではありません。`push.default`、`remote.pushDefault`、`branch.<name>.pushRemote`などの設定によって異なります。pull先とpush先を分ける運用では、それぞれの設定を確認します。
 
 確認には次のコマンドを使います。
 
