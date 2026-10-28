@@ -3,12 +3,14 @@ title: "Vercel・Railway・AWSの違いからWebアプリのデプロイ先を�
 emoji: "🚀"
 type: "tech"
 topics: ["aws", "vercel", "railway", "deploy"]
-published: false
+published: true
 ---
 
 Webアプリケーションのデプロイ先を調べると、Vercel、Railway、AWSといったサービスが候補に挙がります。
 
 ただし、この3つは同じ範囲を担当するサービスではありません。単純に新旧や優劣で比較するより、**開発者がどこまでインフラを管理するか**という観点で整理すると選びやすくなります。
+
+この記事では一般的な機能表だけで終わらせず、Reactの静的フロントエンド、Spring Boot API、PostgreSQLを使う個人開発を例に、要件からデプロイ先を選ぶ過程を整理します。比較は2026年10月29日に確認した公式ドキュメントに基づくもので、同一アプリケーションを3サービスへ配置した性能比較ではありません。
 
 ## デプロイで必要になるもの
 
@@ -25,9 +27,12 @@ Webサイトを公開するには、ソースコードをサーバーへ置く�
 Reactの静的サイトをAWSで構成する場合、デプロイとユーザーからのアクセスは次のように分けて考えられます。
 
 ```text
-デプロイ: GitHub → ビルド → S3 → CloudFront
-アクセス: ユーザー → Route 53 → CloudFront（HTTPS / ACM）→ S3
+デプロイ: GitHub → CI/CD → Reactの静的ビルド → S3
+配信:     ユーザー → CloudFront（HTTPS / ACM）→ S3
+DNS:      独自ドメイン → Route 53でCloudFrontへ名前解決
 ```
+
+Route 53はユーザーのリクエストが通過するサーバーではなく、ドメイン名からCloudFrontの配信先を解決するDNSです。また、CloudFrontはS3に配置したファイルを配信するため、更新時にはキャッシュの有効期限や、必要に応じたキャッシュ無効化（Invalidation）も考慮します。
 
 構成を細かく選べる一方で、それぞれのサービスを接続して運用する必要があります。VercelやRailwayのような管理型プラットフォームは、この作業の一部を標準機能として引き受けます。
 
@@ -60,7 +65,7 @@ Reactの静的サイトだけでなく、Next.jsアプリケーションやVerce
 
 ### Hobby Planを利用するときの注意
 
-2026年8月時点の公式ドキュメントでは、Hobby Planは個人・非商用のプロジェクト向けです。業務や商用サービスで利用する場合は、最新の利用条件とPro Planを確認する必要があります。
+2026年10月時点の公式ドキュメントでは、Hobby Planは個人・非商用のプロジェクト向けです。業務や商用サービスで利用する場合は、最新の利用条件とPro Planを確認する必要があります。
 
 無料枠の有無だけでなく、Vercel Functionsの実行時間や転送量など、アプリケーションに関係する制限もデプロイ前に確認します。
 
@@ -93,10 +98,10 @@ ReactとSpring Bootを使う場合、次のような構成が考えられます�
 
 ```text
 ユーザー
-  ├─ React → S3 + CloudFront
-  └─ API   → Load Balancer → ECS / Springコンテナ
-                                  ↓
-                               RDS PostgreSQL
+  ├─ CloudFront → S3（Reactの静的ビルド）
+  └─ Application Load Balancer → ECS（Spring Bootコンテナ）
+                                      ↓
+                                  RDS PostgreSQL
 ```
 
 学習用であれば、最初はEC2上でDockerコンテナを1つ動かす構成も選べます。要件の増加に合わせてロードバランサーやECSへ移行する方法もあります。
@@ -123,6 +128,44 @@ AWSが候補になりやすいのは次のような場合です。
 
 同じプロジェクトで複数のサービスを組み合わせることもできます。
 
+この表は、上で示した構成例に対する定性的な比較です。AWSでもAmplify Hostingなどの管理型サービスを使えば運用範囲を減らせるため、「AWSは必ず難しい」という意味ではありません。また、RailwayのPostgreSQLは、RDSと同じ運用保証を持つサービスとは限りません。バックアップ、復旧、更新、可用性の責任範囲は、採用するサービスとプランごとに確認します。
+
+## 要件から候補を絞った判断例
+
+ここでは、次の要件を持つ個人開発を想定します。
+
+- Reactは静的にビルドできるSPA
+- Spring Boot APIは常時リクエストを受け付ける
+- PostgreSQLが必要
+- まずは機能を外部から確認できる状態を優先する
+- 個人・非商用で始めるが、料金と利用条件は公開前に再確認する
+- VPCや複数AZなどの詳細なインフラ設計は現段階の要件に含めない
+
+この要件では、最初の候補を次のように絞れます。
+
+| 対象 | 選択 | 判断理由 |
+|---|---|---|
+| React | Vercel | Gitリポジトリ連携とプレビュー環境を利用し、画面変更を確認しやすくする |
+| Spring Boot | Railway | GitHubまたはDockerfileからAPIを配置し、サーバー構築より機能検証を優先する |
+| PostgreSQL | Railway | APIと同じプロジェクト内で接続情報を管理する |
+| AWS | 今回は保留 | 現段階では詳細なネットワーク制御より、少ない構成要素で公開することを優先する |
+
+AWSを選ばない理由は、AWSが劣っているからではありません。今回の要件では、VPC、ロードバランサー、ECS、RDSなどを個別に設計・運用する利点をまだ使い切れないと判断したためです。反対に、ネットワーク分離、権限管理、可用性、監査要件が加われば、この判断は変わります。
+
+### この構成で残る確認事項
+
+管理をプラットフォームへ任せても、アプリケーション側の確認は必要です。
+
+- ブラウザーからRailwayのAPIを直接呼ぶ場合のCORS設定。本番フロントエンドのOriginを明示し、プレビュー環境を許可する範囲も決める
+- SPAの画面URLへ直接アクセスしたときのフォールバック設定。トップページだけでなく、画面の再読み込みでも表示できるか確認する
+- フロントエンドへ公開してよい環境変数と、サーバーだけで保持する秘密情報の分離
+- Railway内のAPIからPostgreSQLへ接続するプライベート接続と、バックアップの設定・復元手順。外部接続が不要ならDBの公開アクセスを追加しない
+- デプロイ失敗時に確認するログの場所
+- 実際のレスポンスタイムと月額利用量
+- 無料枠やプラン条件を超えた場合の移行方針
+
+この段階では性能や料金を実測していないため、「最適な構成」とは断定しません。まず候補を絞り、実際にデプロイした後でログ、応答時間、利用量、復元手順を確認して判断を更新する前提です。
+
 ## 構成例
 
 ### 静的なポートフォリオ
@@ -146,8 +189,8 @@ PostgreSQL  → Railway
 ### インフラまで扱うチーム開発
 
 ```text
-React       → S3 / CloudFront
-Spring Boot → Docker / ECS
+Reactの静的ビルド     → S3 / CloudFront
+Spring Bootコンテナ   → ECS
 PostgreSQL  → RDS
 ```
 
@@ -171,6 +214,12 @@ PostgreSQL  → RDS
 
 - [VercelのPlan](https://vercel.com/docs/plans)
 - [Vercel Hobby Plan](https://vercel.com/docs/plans/hobby)
+- [Vercelの制限](https://vercel.com/docs/limits)
+- [Vercel: Vite](https://vercel.com/docs/frameworks/frontend/vite)
 - [Railway: Deploy a Spring Boot App](https://docs.railway.com/guides/spring-boot)
 - [Railway PostgreSQL](https://docs.railway.com/databases/postgresql)
+- [Railway Pricing FAQs](https://docs.railway.com/pricing/faqs)
 - [AWSの製品一覧](https://aws.amazon.com/jp/products/)
+- [AWS Amplify Hosting](https://docs.aws.amazon.com/amplify/latest/userguide/welcome.html)
+- [AWS: CloudFrontを使用した安全な静的Webサイト](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/getting-started-secure-static-website-cloudformation-template.html)
+- [AWS: Route 53からCloudFrontへトラフィックをルーティングする](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-cloudfront-distribution.html)
