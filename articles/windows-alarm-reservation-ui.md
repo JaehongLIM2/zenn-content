@@ -19,7 +19,7 @@ published: true
 今回は、ボタンの名前と配置を変えるところから、予約状態と取消操作の関係を見直した記録です。[Windows Alarmのリポジトリ](https://github.com/JaehongLIM2/alarm_program)を公開しており、本文では[画面表示の判定](https://github.com/JaehongLIM2/alarm_program/blob/86faa68bdd246ec04025ffa1583b27d90b42164b/src/WindowsAlarm/Services/ReservationStatus.cs)と[予約取消の処理](https://github.com/JaehongLIM2/alarm_program/blob/86faa68bdd246ec04025ffa1583b27d90b42164b/src/WindowsAlarm/Services/AlarmCoordinator.cs)も参照できます。
 
 :::message
-2026年10月27日のUI変更と、11月3日の予約維持に関する修正を、11月12日にソースと検証記録から整理した記事です。参照する実装はコミット `86faa68` に固定しています。画面は韓国語のため、本文・図では操作名を日本語に置き換え、表には実際の表示名を併記します。実装や検証コードの整備には生成AIを利用しています。第三者を対象にしたユーザビリティ調査ではありません。
+2026年10月27日のUI変更と、11月3日の予約維持に関する修正を、11月12日にソースと検証記録から整理した記事です。参照する実装はコミット `86faa68` に固定しています。この記事で扱う変更時点の画面は韓国語のため、本文・図では操作名を日本語に置き換え、表には実際の表示名を併記します。実装や検証コードの整備には生成AIを利用しています。第三者を対象にしたユーザビリティ調査ではありません。
 :::
 
 ## 「停止」と「取消」が、それぞれ何に作用するのか
